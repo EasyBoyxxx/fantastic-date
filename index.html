@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Свадебное приглашение</title>
+<style>
+  :root {
+    --olive: #4A592B;
+    --lime: #98A84E;
+    --rose: #E3928B;
+    --cream: #F4F2C2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #4A592B;
+    cursor: none;
+    font-family: 'Georgia', 'Times New Roman', serif;
+  }
+
+  /* --- Курсор --- */
+  .cursor-dot {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--rose);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px rgba(227, 146, 139, 0.8);
+  }
+
+  /* --- Лепестки (реже, легче) --- */
+  .petal {
+    position: fixed;
+    top: -20px;
+    pointer-events: none;
+    z-index: 50;
+    background: var(--rose);
+    border-radius: 50% 0 50% 0;
+    opacity: 0.7;
+    will-change: transform;
+    transform: translateZ(0);
+    animation: fall linear infinite;
+  }
+
+  @keyframes fall {
+    0%   { transform: translate3d(0, -5vh, 0) rotate(0deg); opacity: 0.7; }
+    100% { transform: translate3d(30px, 105vh, 0) rotate(360deg); opacity: 0.2; }
+  }
+
+  /* --- Слайды --- */
+  .slide {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    opacity: 0;
+    transform: scale(1.12) translateZ(0);
+    filter: blur(14px);
+
+    transition:
+      opacity 2s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      filter 2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: opacity, transform, filter;
+
+    pointer-events: none;
+    z-index: 2;
+    padding: 20px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: scale(1) translateZ(0);
+    filter: blur(0);
+    z-index: 10;
+    pointer-events: auto;
+  }
+
+  .slide.leaving {
+    opacity: 0;
+    transform: scale(1.18) translateZ(0);
+    filter: blur(18px);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* --- Рамка --- */
+  .frame {
+    position: relative;
+    z-index: 2;
+    max-width: 720px;
+    width: 100%;
+    padding: 40px 32px;
+    background: rgba(252, 124, 216, 0.22);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border: 2px solid var(--invicible);
+    border-radius: 24px;
+    box-shadow: 0 0 0 6px rgba(244, 242, 194, 0.12), 0 20px 60px rgba(0,0,0,0.5);
+    text-align: center;
+    color: var(--cream);
+    overflow: hidden;
+  }
+
+  .frame::before, .frame::after {
+    content: '';
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--cream);
+    opacity: 0.6;
+  }
+  .frame::before { top: 10px; left: 10px; border-right: none; border-bottom: none; border-radius: 12px 0 0 0; }
+  .frame::after { bottom: 10px; right: 10px; border-left: none; border-top: none; border-radius: 0 0 12px 0; }
+
+  .names {
+    font-size: 3.5rem;
+    color: var(--cream);
+    text-shadow: 0 2px 12px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6);
+    line-height: 1.3;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .amp { color: var(--rose); font-size: 2rem; margin: 0 8px; }
+
+  .subtitle {
+    font-size: 2rem;
+    color: rgba(178, 250, 152, 1);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6);
+  }
+
+  .body-text {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: rgba(244, 242, 194, 0.95);
+    margin-bottom: 18px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6);
+  }
+
+  .date-badge {
+    display: inline-block;
+    padding: 10px 28px;
+    border: 1px solid var(--rose);
+    border-radius: 40px;
+    color: var(--rose);
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    background: rgba(26, 26, 26, 0.35);
+  }
+
+  /* --- Таймер --- */
+  .countdown {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cd-item {
+    min-width: 62px;
+    padding: 10px 6px;
+    background: rgba(252, 124, 216, 0.5);
+    border: 1px solid var(--lime);
+    border-radius: 14px;
+    text-align: center;
+  }
+
+  .cd-num { font-size: 1.5rem; color: rgba(178, 250, 152, 1); line-height: 1; }
+  .cd-label {
+    font-size: 0.65rem;
+    color: rgba(178, 250, 152, 1);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 6px;
+  }
+
+  /* --- 5 слайд --- */
+  .slide-final {
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-direction: column;
+    padding: 24px 20px;
+  }
+
+  .final-timer-top {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  .final-center {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .thanks {
+    max-width: 640px;
+    color: var(--cream);
+    text-shadow: 0 2px 16px rgba(0,0,0,0.85), 0 0 6px rgba(0,0,0,0.7);
+  }
+
+  .thanks .big {
+    font-size: 2.6rem;
+    font-style: italic;
+    line-height: 1.25;
+    margin-bottom: 20px;
+    color: var(--cream);
+  }
+
+  .thanks .small {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: rgba(244, 242, 194, 0.95);
+  }
+
+  /* --- 2 слайд: фото места + кнопка --- */
+  .place-photo {
+    width: 100%;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 2px solid var(--cream);
+    display: block;
+    margin: 6px 0 18px;
+  }
+
+  .map-btn {
+    display: inline-block;
+    padding: 12px 32px;
+    border: 2px solid var(--rose);
+    border-radius: 40px;
+    color: var(--rose);
+    text-decoration: none;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: background 0.3s, color 0.3s;
+    background: rgba(26, 26, 26, 0.35);
+  }
+  .map-btn:hover {
+    background: var(--rose);
+    color: var(--olive);
+  }
+
+  /* --- 3 слайд: план прижат к низу --- */
+  .slide-plan {
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 40px;
+  }
+
+  .timeline { text-align: left; margin: 0; }
+
+  .tl-item {
+    display: flex;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px dashed rgba(152, 168, 78, 0.45);
+    align-items: baseline;
+  }
+  .tl-item:last-child { border-bottom: none; }
+
+  .tl-time { flex: 0 0 66px; color: var(--rose); font-weight: 600; font-size: 0.9rem; }
+  .tl-desc { color: var(--cream); font-size: 0.9rem; }
+
+
+  /* --- Навигация --- */
+  .dots {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+
+  .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: rgba(244, 242, 194, 0.3);
+    border: 1px solid rgba(244, 242, 194, 0.6);
+    cursor: none;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .dot.active {
+    background: var(--rose);
+    border-color: var(--rose);
+    transform: scale(1.3);
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(244, 242, 194, 0.55);
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    z-index: 100;
+    pointer-events: none;
+    text-transform: uppercase;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.7);
+  }
+
+  .toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--olive);
+    color: var(--cream);
+    padding: 14px 28px;
+    border-radius: 40px;
+    border: 1px solid var(--lime);
+    z-index: 99999;
+    opacity: 0;
+    transition: transform 0.4s, opacity 0.4s;
+    font-size: 0.9rem;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 600px) {
+    .frame { padding: 34px 20px; }
+    .names { font-size: 1.7rem; }
+    .thanks .big { font-size: 1.9rem; }
+    .cd-item { min-width: 52px; }
+    .cd-num { font-size: 1.2rem; }
+    .place-photo { height: 200px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor-dot" id="cursorDot"></div>
+
+<!-- Слайд 1: приветствие -->
+<div class="slide active" id="slide-0" style="background-image: url('images/1.jpg');">
+  <div class="frame">
+    <p class="subtitle">Приглашение на свадьбу</p>
+    <h1 class="names">Илья <span class="amp">&</span> Мария</h1>
+    <p class="body-text">
+      Дорогие друзья и близкие!<br>
+      Мы с радостью приглашаем вас разделить с нами<br>
+      самый счастливый день нашей жизни.
+    </p>
+    <div class="date-badge">14 сентября 2027</div>
+  </div>
+</div>
+
+<!-- Слайд 2: место + фото + кнопка на карту -->
+<div class="slide" id="slide-1" style="background-image: url('images/2.jpg');">
+  <div class="frame">
+    <p class="subtitle">Место проведения</p>
+    <p class="body-text" style="margin-bottom:10px;">Загородный клуб «Лесная поляна»</p>
+
+    <img class="place-photo" src="images/map.jpg" alt="Место проведения">
+
+    <a class="map-btn"
+       href="https://yandex.ru/maps/?pt=37.6173,55.7558&z=16&l=map"
+       target="_blank" rel="noopener">
+      Открыть на карте
+    </a>
+  </div>
+</div>
+
+<!-- Слайд 3: план мероприятия -->
+<div class="slide slide-plan" id="slide-2" style="background-image: url('images/3.jpg');">
+  <div class="frame">
+    <p class="subtitle" style="margin-bottom:12px;">План мероприятия</p>
+    <div class="timeline">
+      <div class="tl-item"><span class="tl-time">15:00</span><span class="tl-desc">Сбор гостей, приветственные напитки</span></div>
+      <div class="tl-item"><span class="tl-time">16:00</span><span class="tl-desc">Церемония бракосочетания</span></div>
+      <div class="tl-item"><span class="tl-time">17:00</span><span class="tl-desc">Фуршет и фотосессия</span></div>
+      <div class="tl-item"><span class="tl-time">18:30</span><span class="tl-desc">Праздничный ужин</span></div>
+      <div class="tl-item"><span class="tl-time">21:00</span><span class="tl-desc">Танцы и развлечения</span></div>
+      <div class="tl-item"><span class="tl-time">23:00</span><span class="tl-desc">Завершение вечера, фейерверк</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Слайд 4: дресс-код -->
+<div class="slide" id="slide-3" style="background-image: url('images/4.jpg');">
+  <div class="frame">
+    <p class="subtitle">Дресс-код</p>
+    <p class="body-text" style="margin-bottom:14px;">
+      Мы будем рады, если вы поддержите палитру нашего праздника
+    </p>
+    <p class="body-text" style="font-size:0.9rem;">
+      Просим избегать ярких контрастных цветов и крупных принтов.<br>
+      Для дам — платья и аксессуары в спокойной гамме,<br>
+      для кавалеров — рубашки и костюмы в тёплых оттенках.
+    </p>
+  </div>
+</div>
+
+<!-- Слайд 5: таймер + благодарность -->
+<div class="slide slide-final" id="slide-4" style="background-image: url('images/5.jpg');">
+
+  <div class="final-timer-top">
+    <div class="countdown">
+      <div class="cd-item"><div class="cd-num" id="cd-days">--</div><div class="cd-label">дней</div></div>
+      <div class="cd-item"><div class="cd-num" id="cd-hours">--</div><div class="cd-label">часов</div></div>
+      <div class="cd-item"><div class="cd-num" id="cd-mins">--</div><div class="cd-label">минут</div></div>
+      <div class="cd-item"><div class="cd-num" id="cd-secs">--</div><div class="cd-label">секунд</div></div>
+    </div>
+  </div>
+
+  <div class="final-center">
+    <div class="thanks">
+      <p class="big">Спасибо, что будете с нами<br>в этот день</p>
+      <p class="small">
+        Ваше присутствие — лучший подарок для нас.<br>
+        До встречи на празднике!
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="hint"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ===== КУРСОР ===== */
+  const cursorDot = document.getElementById('cursorDot');
+  document.addEventListener('mousemove', (e) => {
+    cursorDot.style.left = e.clientX + 'px';
+    cursorDot.style.top = e.clientY + 'px';
+  });
+
+  /* ===== ЛЕПЕСТКИ ===== */
+  function createPetal() {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    const size = Math.random() * 10 + 6;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDuration = (Math.random() * 6 + 7) + 's';
+    p.style.opacity = (Math.random() * 0.35 + 0.35).toFixed(2);
+    document.body.appendChild(p);
+    p.addEventListener('animationend', () => p.remove());
+  }
+  setInterval(createPetal, 1700);
+  for (let i = 0; i < 4; i++) setTimeout(createPetal, i * 250);
+
+  /* ===== СЛАЙДЫ ===== */
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  let current = 0;
+  let isAnimating = false;
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', (e) => {
+      e.stopPropagation();
+      goToSlide(i);
+    });
+    dotsContainer.appendChild(d);
+  });
+  const dotEls = document.querySelectorAll('.dot');
+
+  function goToSlide(index) {
+    if (isAnimating || index === current) return;
+    isAnimating = true;
+
+    const prev = current;
+    current = index;
+
+    slides[prev].classList.remove('active');
+    slides[prev].classList.add('leaving');
+    slides[current].classList.add('active');
+
+    dotEls[prev].classList.remove('active');
+    dotEls[current].classList.add('active');
+
+    setTimeout(() => {
+      slides[prev].classList.remove('leaving');
+      isAnimating = false;
+    }, 2100);
+  }
+
+  function nextSlide() { goToSlide((current + 1) % slides.length); }
+  function prevSlide() { goToSlide((current - 1 + slides.length) % slides.length); }
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.dot') || e.target.closest('.map-btn')) return;
+    nextSlide();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+  });
+
+  /* ===== ТАЙМЕР ===== */
+  const weddingDate = new Date('2027-09-14T15:00:00').getTime();
+
+  function updateCountdown() {
+    const diff = weddingDate - Date.now();
+    const d = document.getElementById('cd-days');
+    const h = document.getElementById('cd-hours');
+    const m = document.getElementById('cd-mins');
+    const s = document.getElementById('cd-secs');
+    if (!d) return;
+
+    if (diff <= 0) {
+      d.textContent = '0';
+      h.textContent = '00';
+      m.textContent = '00';
+      s.textContent = '00';
+      return;
+    }
+    d.textContent = String(Math.floor(diff / 86400000)).padStart(2, '0');
+    h.textContent = String(Math.floor(diff % 86400000 / 3600000)).padStart(2, '0');
+    m.textContent = String(Math.floor(diff % 3600000 / 60000)).padStart(2, '0');
+    s.textContent = String(Math.floor(diff % 60000 / 1000)).padStart(2, '0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  /* ===== ТОСТ ===== */
+  const toast = document.getElementById('toast');
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
